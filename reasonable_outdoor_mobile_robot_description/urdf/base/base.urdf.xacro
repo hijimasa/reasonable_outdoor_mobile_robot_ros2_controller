@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:property name="frame_mass" value="20.0"/>
+
+  <xacro:macro name="base_v0" params="parent *joint_origin">
+        <joint name="body_link_joint" type="fixed">
+          <xacro:insert_block name="joint_origin"/>
+          <parent link="${parent}"/>
+          <child link="body_link"/>
+        </joint>
+
+        <link name="body_link">
+          <visual>
+                <geometry>
+                  <mesh filename="file://$(find reasonable_outdoor_mobile_robot_description)/meshes/STL/ReasonableOutdoorMobileRobot-BaseUnit_light.stl"/>
+                </geometry>
+                <material name="white"/>
+          </visual>
+          <collision>
+                <geometry>
+                  <mesh filename="file://$(find reasonable_outdoor_mobile_robot_description)/meshes/STL/ReasonableOutdoorMobileRobot-BaseUnit_light.stl"/>
+                </geometry>
+          </collision>
+          <inertial>
+                <origin xyz="-0.1 0 0.05"/>
+                <mass value="${frame_mass}"/>
+                <inertia ixx="${frame_mass*0.0198}" ixy="0.0" ixz="0.0"
+                                 iyy="${frame_mass*0.0285}" iyz="0.0"
+                                 izz="${frame_mass*0.0368}" />
+          </inertial>
+        </link>
+  </xacro:macro>
+
+</robot>
+

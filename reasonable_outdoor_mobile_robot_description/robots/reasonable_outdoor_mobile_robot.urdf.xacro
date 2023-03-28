@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<!-- Basic differential drive mobile base -->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="reasonable_outdoor_mobile_robot">
+  <xacro:arg name="prefix" default="" />
+  <xacro:arg name="use_sim" default="false" />
+  
+  <!-- Import Rviz colors -->
+  <xacro:include filename="$(find reasonable_outdoor_mobile_robot_description)/urdf/common.xacro" />
+
+  <xacro:include filename="$(find reasonable_outdoor_mobile_robot_description)/robots/reasonable_outdoor_mobile_robot_description.urdf.xacro" />
+
+  <xacro:include filename="$(find reasonable_outdoor_mobile_robot_description)/gazebo/reasonable_outdoor_mobile_robot.gazebo.xacro" />
+
+  <!-- Import blv_diffbot ros2_control description -->
+  <xacro:include filename="$(find reasonable_outdoor_mobile_robot_description)/ros2_control/reasonable_outdoor_mobile_robot.ros2_control.xacro" />
+
+  <xacro:reasonable_outdoor_mobile_robot prefix="$(arg prefix)" use_sim="$(arg use_sim)"/>
+  <xacro:reasonable_outdoor_mobile_robot_gazebo prefix="$(arg prefix)" />
+    
+  <xacro:reasonable_outdoor_mobile_robot_ros2_control
+    name="reasonable_outdoor_mobile_robot" prefix="$(arg prefix)" use_sim="$(arg use_sim)" />
+
+</robot>

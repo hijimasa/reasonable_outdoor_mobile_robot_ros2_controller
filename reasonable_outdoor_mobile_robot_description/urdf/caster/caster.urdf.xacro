@@ -1,0 +1,100 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:property name="caster_wheel_radius" value="0.05"/>
+  <xacro:property name="caster_wheel_length" value="0.03"/>
+  <xacro:property name="caster_wheel_mass" value="0.8"/>
+  
+  <xacro:macro name="caster_v0" params="prefix parent *joint_origin use_sim:=^|false">
+  
+  <xacro:if value="${use_sim}">
+    <joint name="${prefix}_caster_frame_link_joint" type="continuous">
+      <xacro:insert_block name="joint_origin"/>
+      <parent link="${parent}"/>
+      <child link="${prefix}_caster_frame_link"/>
+      <axis xyz="0 0 1"/>
+      <dynamics damping="0.1" friction="0.2"/>
+    </joint>
+    <transmission name="${prefix}_caster_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${prefix}_caster_frame_link_joint">
+        <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${prefix}_caster_frame_motor">
+        <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+  </xacro:if>
+  <xacro:unless value="${use_sim}">
+    <joint name="${prefix}_caster_frame_link_joint" type="fixed">
+      <xacro:insert_block name="joint_origin"/>
+      <parent link="${parent}"/>
+      <child link="${prefix}_caster_frame_link"/>
+    </joint>
+  </xacro:unless>
+  
+        <link name="${prefix}_caster_frame_link">
+          <visual>
+                <geometry>
+                  <mesh filename="file://$(find reasonable_outdoor_mobile_robot_description)/meshes/STL/turn_light.stl"/>
+                </geometry>
+                <material name="white"/>
+          </visual>
+          <inertial>
+                <origin xyz="0 0 0"/>
+                <mass value="0.2"/>
+                <inertia ixx="0.2578" ixy="0" ixz="0"
+                                 iyy="0.2578" iyz="0"
+                                 izz="0.12" />
+          </inertial>          
+        </link>
+
+  <xacro:if value="${use_sim}">
+        <joint name="${prefix}_caster_wheel_link_joint" type="continuous">
+          <parent link="${prefix}_caster_frame_link"/>
+          <child link="${prefix}_caster_wheel_link"/>
+          <origin rpy="${pi/2} 0 0" xyz="-0.02884 0 -0.1013"/>
+          <axis xyz="0 0 1"/>
+          <dynamics damping="0.01"/>
+        </joint>
+    <transmission name="${prefix}_caster_wheel_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${prefix}_caster_wheel_link_joint">
+        <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${prefix}_caster_wheel_motor">
+        <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+  </xacro:if>
+  <xacro:unless value="${use_sim}">
+        <joint name="${prefix}_caster_wheel_link_joint" type="fixed">
+          <parent link="${prefix}_caster_frame_link"/>
+          <child link="${prefix}_caster_wheel_link"/>
+          <origin rpy="${pi/2} 0 0" xyz="-0.02884 0 -0.1013"/>
+        </joint>
+  </xacro:unless>
+
+        <link name="${prefix}_caster_wheel_link">
+          <visual>
+                <geometry>
+                  <mesh filename="file://$(find reasonable_outdoor_mobile_robot_description)/meshes/STL/turn_tire_light.stl"/>
+                </geometry>
+                <material name="black"/>
+          </visual>
+	  <collision>
+		<geometry>
+                  <mesh filename="file://$(find reasonable_outdoor_mobile_robot_description)/meshes/STL/turn_tire_light.stl"/>
+		</geometry>
+	  </collision>
+	  <inertial>
+        <mass value="${caster_wheel_mass}"/>
+        <inertia ixx="${caster_wheel_mass*caster_wheel_radius*caster_wheel_radius/4}" ixy="0" ixz="0" 
+			iyy="${caster_wheel_mass*caster_wheel_radius*caster_wheel_radius/4}" iyz="0" 
+			izz="${caster_wheel_mass*caster_wheel_radius*caster_wheel_radius/4}"/>
+	  </inertial>       
+        </link>
+  </xacro:macro>
+  
+</robot>

@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:property name="wheel_radius" value="0.095"/>
+  <xacro:property name="wheel_length" value="0.09"/>
+  <xacro:property name="wheel_mass" value="2.0"/>
+  
+  <xacro:macro name="wheel_v0" params="prefix parent *joint_origin *joint_axis">
+	<joint name="${prefix}_wheel_joint" type="continuous">
+	  <xacro:insert_block name="joint_origin"/>
+	  <xacro:insert_block name="joint_axis"/>
+	  <parent link="${parent}"/>
+	  <child link="${prefix}_wheel_link"/>
+	</joint>
+    <transmission name="${prefix}_wheel_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${prefix}_wheel_joint">
+        <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${prefix}_wheel_motor">
+        <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+
+	<link name="${prefix}_wheel_link">
+	  <visual>
+		<geometry>
+		  <mesh filename="file://$(find reasonable_outdoor_mobile_robot_description)/meshes/STL/DDT_M1502D_211_light.stl"/>
+		</geometry>
+                <material name="black"/>
+	  </visual>
+	  <collision>
+		<geometry>
+		  <mesh filename="file://$(find reasonable_outdoor_mobile_robot_description)/meshes/STL/DDT_M1502D_211_light.stl"/>
+		</geometry>
+	  </collision>
+	  <inertial>
+        <mass value="${wheel_mass}"/>
+        <inertia ixx="${wheel_mass*wheel_radius*wheel_radius/4}" ixy="0" ixz="0" 
+			iyy="${wheel_mass*wheel_radius*wheel_radius/4}" iyz="0" 
+			izz="${wheel_mass*wheel_radius*wheel_radius/4}"/>
+	  </inertial>
+	</link>
+  </xacro:macro>
+  
+</robot>

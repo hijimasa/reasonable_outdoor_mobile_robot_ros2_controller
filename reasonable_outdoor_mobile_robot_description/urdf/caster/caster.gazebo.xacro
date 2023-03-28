@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+  
+  <xacro:macro name="caster_gazebo_v0" params="prefix">
+	<gazebo reference="${prefix}_caster_wheel_link">
+	  <selfCollide>false</selfCollide>
+      <mu1 value="10.8" />
+      <mu2 value="10.8" />
+      <kp value="7000000.0" />
+      <kd value="50000000.0" />
+    </gazebo>
+  </xacro:macro>
+</robot>

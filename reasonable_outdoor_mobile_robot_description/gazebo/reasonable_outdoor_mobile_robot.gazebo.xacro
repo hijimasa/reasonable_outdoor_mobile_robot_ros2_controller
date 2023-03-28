@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <xacro:macro name="reasonable_outdoor_mobile_robot_gazebo" params="prefix">
+
+  <xacro:include filename="$(find reasonable_outdoor_mobile_robot_description)/urdf/base/base.gazebo.xacro"/>
+  <xacro:include filename="$(find reasonable_outdoor_mobile_robot_description)/urdf/wheel/wheel.gazebo.xacro"/>
+  <xacro:include filename="$(find reasonable_outdoor_mobile_robot_description)/urdf/caster/caster.gazebo.xacro"/>
+
+  <!-- =============== Gazebo =============== -->
+  <gazebo>
+    <plugin filename="libgazebo_ros2_control.so" name="gazebo_ros2_control">
+      <parameters>$(find reasonable_outdoor_mobile_robot_description)/config/reasonable_outdoor_mobile_robot_sim.yaml</parameters>
+    </plugin>
+  </gazebo>
+
+  <!-- Base -->
+  <xacro:base_gazebo_v0/>
+
+  <!-- Wheel -->
+  <xacro:wheel_gazebo_v0 prefix="${prefix}right"/>
+  <xacro:wheel_gazebo_v0 prefix="${prefix}left"/>
+
+  <!-- Caster -->
+  <xacro:caster_gazebo_v0 prefix="${prefix}right"/>
+  <xacro:caster_gazebo_v0 prefix="${prefix}left"/>
+
+  </xacro:macro>
+</robot>

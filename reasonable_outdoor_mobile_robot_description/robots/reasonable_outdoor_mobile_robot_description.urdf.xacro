@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <xacro:macro name="reasonable_outdoor_mobile_robot" params="prefix use_sim:=^|false">
+
+  <xacro:include filename="$(find reasonable_outdoor_mobile_robot_description)/urdf/base/base.urdf.xacro"/>
+  <xacro:include filename="$(find reasonable_outdoor_mobile_robot_description)/urdf/wheel/wheel.urdf.xacro"/>
+  <xacro:include filename="$(find reasonable_outdoor_mobile_robot_description)/urdf/caster/caster.urdf.xacro"/>
+
+  <!-- =============== Link & Joint =============== -->
+  <!-- Base -->
+  <link name="${prefix}base_link"/>
+  <xacro:base_v0 parent="${prefix}base_link">
+	<origin xyz="0 0 0.14"/>
+  </xacro:base_v0>
+
+  <!-- Wheel -->
+  <!-- Right Wheel -->
+  <xacro:wheel_v0 prefix="${prefix}right" parent="body_link">
+	<origin xyz="0 -0.1107 0" rpy="${-pi/2} 0 0"/>
+	<axis xyz="0 0 1"/>
+  </xacro:wheel_v0>
+  <!-- Left Wheel -->
+  <xacro:wheel_v0 prefix="${prefix}left" parent="body_link">
+	<origin xyz="0 0.1107 0" rpy="${-pi/2} 0 ${pi}"/>
+	<axis xyz="0 0 -1"/>
+  </xacro:wheel_v0>
+
+  <!-- Caster -->
+  <!-- Right Caster -->
+  <xacro:caster_v0 prefix="${prefix}right" parent="body_link"  use_sim="${use_sim}">
+	<origin xyz="-0.3295 -0.1 0.053265"/>
+  </xacro:caster_v0>
+  <!-- Left Wheel -->
+  <xacro:caster_v0 prefix="${prefix}left" parent="body_link"  use_sim="${use_sim}">
+	<origin xyz="-0.3295 0.1 0.053265"/>
+  </xacro:caster_v0>
+
+  </xacro:macro>
+
+</robot>
