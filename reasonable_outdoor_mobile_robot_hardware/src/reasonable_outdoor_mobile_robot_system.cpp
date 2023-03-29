@@ -194,7 +194,6 @@ CallbackReturn ReasonableRobotSystemHardware::on_deactivate(
 
 hardware_interface::return_type ReasonableRobotSystemHardware::read(const rclcpp::Time & time, const rclcpp::Duration & period)
 {
-  RCLCPP_INFO(rclcpp::get_logger("ReasonableRobotSystemHardware"), "Reading...");
 
   std::vector<float> rad(2);
   std::vector<float> radps(2);
@@ -224,7 +223,7 @@ hardware_interface::return_type ReasonableRobotSystemHardware::read(const rclcpp
       {
         diff_rad -= 2*M_PI;
       }
-      if (diff_rad < M_PI)
+      if (diff_rad < -M_PI)
       {
         diff_rad += 2*M_PI;
       }
@@ -234,11 +233,6 @@ hardware_interface::return_type ReasonableRobotSystemHardware::read(const rclcpp
     hw_velocities_[i] = static_cast<double>(motor_direction * radps[i]);
 
     hw_efforts_[i] = static_cast<double>(motor_direction * current[i]);
-
-    RCLCPP_INFO(
-      rclcpp::get_logger("ReasonableRobotSystemHardware"),
-      "Got position state %.5f and velocity state %.5f for '%s'!", hw_positions_[i],
-      hw_velocities_[i], info_.joints[i].name.c_str());
   }
 
   return hardware_interface::return_type::OK;
@@ -246,8 +240,6 @@ hardware_interface::return_type ReasonableRobotSystemHardware::read(const rclcpp
 
 hardware_interface::return_type ReasonableRobotSystemHardware::write(const rclcpp::Time & time, const rclcpp::Duration & period)
 {
-  RCLCPP_INFO(rclcpp::get_logger("ReasonableRobotSystemHardware"), "Writing...");
-
   std::vector<float> send_commands_radps(hw_commands_.size());
   int motor_direction;
   for (auto i = 0u; i < hw_commands_.size(); i++)
@@ -263,17 +255,9 @@ hardware_interface::return_type ReasonableRobotSystemHardware::write(const rclcp
 
     // Generate the motor command message
     send_commands_radps[i] = motor_direction * hw_commands_[i];
-
-    
-    // Simulate sending commands to the hardware
-    RCLCPP_INFO(
-      rclcpp::get_logger("ReasonableRobotSystemHardware"), "Got command %.5f for '%s'!", hw_commands_[i],
-      info_.joints[i].name.c_str());
   }
   serial_port_->writeRadps(send_commands_radps);
   
-  RCLCPP_INFO(rclcpp::get_logger("ReasonableRobotSystemHardware"), "Joints successfully written!");
-
   return hardware_interface::return_type::OK;
 }
 

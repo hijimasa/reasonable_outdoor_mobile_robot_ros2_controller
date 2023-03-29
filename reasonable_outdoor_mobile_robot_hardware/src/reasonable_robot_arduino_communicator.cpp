@@ -81,7 +81,6 @@ ReasonableRobotArduinoComunicator::writeRadps(std::vector<float>& command_radps)
   uint8_t *send_command;
   send_command = new uint8_t[motor_num_ * 2 + 2];
   send_command[0] = 85;
-  printf("command: %d", send_command[0]);
   send_command[motor_num_ * 2 + 1] = send_command[0];
   for (int i = 0; i < motor_num_; i++)
   {
@@ -90,10 +89,7 @@ ReasonableRobotArduinoComunicator::writeRadps(std::vector<float>& command_radps)
     send_command[2*i + 2] = static_cast<uint8_t>(speed_rpm & 0x000000ff);
     send_command[motor_num_ * 2 + 1] += send_command[2*i + 1];
     send_command[motor_num_ * 2 + 1] += send_command[2*i + 2];
-
-    printf(" %d %d", send_command[2*i + 1], send_command[2*i + 2]);
   }
-  printf(" %d\n", send_command[motor_num_ * 2 + 1]);
 
   serial_write(device_fd_, send_command, motor_num_ * 2 + 2);
 
@@ -143,7 +139,6 @@ ReasonableRobotArduinoComunicator::readRad(std::vector<float>& response_rad, std
   while (available_size < static_cast<int32_t>(motor_num_) * 6 + 2)
   {
     ioctl(device_fd_, FIONREAD, &available_size);
-//    printf("ava. = %d\n", available_size);
     usleep(10000);
 
     retry_count++;
@@ -162,24 +157,18 @@ ReasonableRobotArduinoComunicator::readRad(std::vector<float>& response_rad, std
   }
   tcflush(device_fd_, TCIFLUSH);
 
-  printf("recv_command:");
-  printf(" %d ", recv_command[0]);
   for (int i = 0; i < motor_num_; i++)
   {
     int16_t recv_data;
     recv_data = (static_cast<int16_t>(recv_command[i*6+1]) << 8) +recv_command[i*6+2];
     response_rad[i] = static_cast<float>(recv_data) / 65535.0f * (M_PI * 2.0f);
-    printf(" %f", response_rad[i]);
 
     recv_data = (static_cast<int16_t>(recv_command[i*6+3]) << 8) +recv_command[i*6+4];
     response_radps[i] = static_cast<float>(recv_data) * (M_PI * 2.0f) / 60.0f;
-    printf(" %f", response_radps[i]);
 
     recv_data = (static_cast<int16_t>(recv_command[i*6+5]) << 8) +recv_command[i*6+6];
     response_current[i] = static_cast<float>(recv_data);
-    printf(" %f", response_current[i]);
   }
-  printf("\nkey = %d\n", recv_command[motor_num_*2+2]);
 
   return true;
 }
