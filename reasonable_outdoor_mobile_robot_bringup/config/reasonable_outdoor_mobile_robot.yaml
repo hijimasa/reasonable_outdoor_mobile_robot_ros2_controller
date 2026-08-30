@@ -26,10 +26,24 @@ diff_drive_controller:
     odom_frame_id: odom
     base_frame_id: base_link
 
-    pose_covariance_diagonal : [0.001, 0.001, 1000000.0, 1000000.0, 1000000.0, 1000.0]
-    twist_covariance_diagonal: [0.001, 0.001, 1000000.0, 1000000.0, 1000000.0, 1000.0]
+    # The last entry is yaw. It was 1000.0, i.e. a standard deviation of 31 rad
+    # and 31 rad/s -- a declaration that this odometry knows nothing at all about
+    # heading. The EKF believed it: after an 8 s turn at 0.6 rad/s its own
+    # estimate of the yaw rate had only reached 0.2, and the leftover took half a
+    # minute to decay while the robot stood still and the estimate slid away
+    # under it. Wheel odometry's instantaneous yaw rate is in fact good; it is
+    # the INTEGRATED heading that drifts, and nothing fuses that.
+    # z, roll and pitch keep 1e6: a planar robot's wheels really do say nothing
+    # about them.
+    pose_covariance_diagonal : [0.001, 0.001, 1000000.0, 1000000.0, 1000000.0, 0.05]
+    twist_covariance_diagonal: [0.001, 0.001, 1000000.0, 1000000.0, 1000000.0, 0.01]
 
-    enable_odom_tf: true
+    # The EKF in tsukuba_robot_localization owns odom -> base_link. Leaving this
+    # true as well puts two publishers on the same transform, and consumers then
+    # see whichever arrived last: raw wheel odometry half the time, the fused
+    # estimate the other half. The wheel odometry is still published as a topic
+    # and is the EKF's main input.
+    enable_odom_tf: false
 
     cmd_vel_timeout: 3.0
     publish_limited_velocity: true
