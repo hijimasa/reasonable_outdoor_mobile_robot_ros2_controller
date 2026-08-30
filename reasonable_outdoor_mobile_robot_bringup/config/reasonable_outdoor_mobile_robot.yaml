@@ -13,7 +13,10 @@ diff_drive_controller:
     left_wheel_names  : ['left_wheel_joint']
     right_wheel_names : ['right_wheel_joint']
 
-    wheel_separation : 0.2
+    # Matches the URDF: the drive wheels sit at y = +/-0.1107 in
+    # tsukuba_robot_description.urdf.xacro. The previous 0.2 disagreed with the
+    # model by ~10%, which shows up directly as a yaw scale error in odometry.
+    wheel_separation : 0.2214
     wheel_radius : 0.095
     wheel_separation_multiplier : 1.0
     left_wheel_radius_multiplier : 1.0
