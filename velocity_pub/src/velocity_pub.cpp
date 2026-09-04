@@ -1,60 +1,52 @@
-#include <chrono>
-#include <functional>
-#include <memory>
-#include <string>
+// Restamp Nav2's Twist as a TwistStamped for diff_drive_controller, which on
+// Jazzy accepts nothing else.
+//
+// This used to publish from a 500 ms wall timer, holding the last command it
+// had heard. That is left over from rclcpp's minimal_publisher example, and it
+// meant a 20 Hz command stream reached the wheels at 2 Hz: nine commands in ten
+// discarded, and each one that survived held for half a second. Every
+// controller parameter downstream describes a 20 Hz loop, so they were all
+// describing something that was not happening -- at 0.4 m/s the robot covered
+// 20 cm between command updates, which is how it clipped a gate wall it had
+// plenty of room for.
+//
+// Publishing on receipt keeps the rate and the timing the controller chose.
 
-#include "rclcpp/rclcpp.hpp"
+#include <memory>
+
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
+#include "rclcpp/rclcpp.hpp"
 
-using namespace std::chrono_literals;
-using std::placeholders::_1;
-
-/* This example creates a subclass of Node and uses std::bind() to register a
-* member function as a callback from the timer. */
-
-class MinimalPublisher : public rclcpp::Node
+class VelocityStamper : public rclcpp::Node
 {
 public:
-  MinimalPublisher()
-  : Node("minimal_publisher"), count_(0)
+  VelocityStamper()
+  : Node("velocity_pub")
   {
-    publisher_ = this->create_publisher<geometry_msgs::msg::TwistStamped>("cmd_vel_stamped", 10);
+    publisher_ = this->create_publisher<geometry_msgs::msg::TwistStamped>(
+      "cmd_vel_stamped", 10);
     subscription_ = this->create_subscription<geometry_msgs::msg::Twist>(
-      "cmd_vel", 10, std::bind(&MinimalPublisher::cmd_vel_callback, this, _1));
-    timer_ = this->create_wall_timer(
-    500ms, std::bind(&MinimalPublisher::timer_callback, this));
+      "cmd_vel", 10,
+      [this](const geometry_msgs::msg::Twist::SharedPtr msg) {
+        geometry_msgs::msg::TwistStamped out;
+        // get_clock() so the stamp follows simulated time when use_sim_time is
+        // set; the wall timer this replaces did not.
+        out.header.stamp = this->get_clock()->now();
+        out.twist = *msg;
+        publisher_->publish(out);
+      });
   }
 
 private:
-  void timer_callback()
-  {
-    auto message = geometry_msgs::msg::TwistStamped();
-    message.header.stamp = this->get_clock()->now();
-    message.twist.linear.x = input_cmd_vel_.linear.x;
-    message.twist.angular.z = input_cmd_vel_.angular.z;
-//    RCLCPP_INFO(this->get_logger(), "Publishing: '%f'", message.twist.linear.x);
-    publisher_->publish(message);
-  }
-
-  void cmd_vel_callback(const geometry_msgs::msg::Twist::SharedPtr msg)
-  {
-    input_cmd_vel_.linear.x = msg->linear.x;
-    input_cmd_vel_.angular.z = msg->angular.z;
-//    RCLCPP_INFO(this->get_logger(), "I heard: %f", msg->linear.x);
-  }
-  rclcpp::TimerBase::SharedPtr timer_;
   rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr publisher_;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr subscription_;
-  geometry_msgs::msg::Twist input_cmd_vel_;
-  size_t count_;
 };
 
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<MinimalPublisher>());
+  rclcpp::spin(std::make_shared<VelocityStamper>());
   rclcpp::shutdown();
   return 0;
 }
-
