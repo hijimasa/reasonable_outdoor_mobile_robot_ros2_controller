@@ -79,6 +79,12 @@ private:
   std::shared_ptr<ReasonableRobotArduinoComunicator> serial_port_;
   
   std::vector<float> prev_pos_;
+  // Whether prev_pos_[i] holds a real sample yet. The old code used 0.0 as the
+  // "unset" marker, which a wheel sitting exactly at zero also produces.
+  std::vector<bool> has_prev_pos_;
+  // Consecutive read() calls the board did not answer. One is a lost frame;
+  // a run of them is a dead link.
+  int read_failures_ = 0;
 
 };
 

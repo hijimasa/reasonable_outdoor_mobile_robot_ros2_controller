@@ -102,11 +102,8 @@ CallbackReturn ReasonableRobotSystemHardware::on_init(const hardware_interface::
 
   serial_port_ = std::make_shared<ReasonableRobotArduinoComunicator>(device_name_, info_.joints.size());
   
-  prev_pos_.resize(info_.joints.size());
-  for (int i = 0; i < info_.joints.size(); i++)
-  {
-    prev_pos_[i] = 0.0f;
-  }
+  prev_pos_.assign(info_.joints.size(), 0.0f);
+  has_prev_pos_.assign(info_.joints.size(), false);
 
   return CallbackReturn::SUCCESS;
 }
@@ -198,7 +195,21 @@ hardware_interface::return_type ReasonableRobotSystemHardware::read(const rclcpp
   std::vector<float> rad(2);
   std::vector<float> radps(2);
   std::vector<float> current(2);
-  serial_port_->readRad(rad, radps, current);
+  if (!serial_port_->readRad(rad, radps, current))
+  {
+    // No usable frame this cycle. Keep the last state rather than feeding
+    // the zeros in `rad` into the position difference below: that put a
+    // spurious pi-sized jump into the odometry every time a reply was late.
+    read_failures_++;
+    if (read_failures_ == 1 || read_failures_ % 20 == 0)
+    {
+      RCLCPP_WARN(
+        rclcpp::get_logger("ReasonableRobotSystemHardware"),
+        "No valid status frame from the motor board (%d consecutive)", read_failures_);
+    }
+    return hardware_interface::return_type::OK;
+  }
+  read_failures_ = 0;
 
   int motor_direction;
   for (uint i = 0; i < hw_commands_.size(); i++)
@@ -212,9 +223,10 @@ hardware_interface::return_type ReasonableRobotSystemHardware::read(const rclcpp
       motor_direction = -1;
     }
 
-    if (prev_pos_[i] == 0.0f)
+    if (!has_prev_pos_[i])
     {
       prev_pos_[i] = rad[i];
+      has_prev_pos_[i] = true;
     }
     else
     {
