@@ -1,6 +1,11 @@
 controller_manager:
   ros__parameters:
-    update_rate: 100  # Hz
+    # The Arduino link is 9600 baud: 6 bytes out and 14 bytes back per cycle is
+    # ~21 ms on the wire before the board's own latency, and read() was measured
+    # at 30-70 ms on the robot. At 100 Hz every cycle overran and the real loop
+    # ran at ~21 Hz anyway, one warning per second. 20 Hz is what the hardware
+    # can deliver; the 70 ms tail still overruns occasionally.
+    update_rate: 20  # Hz
 
     diff_drive_controller:
       type: diff_drive_controller/DiffDriveController
