@@ -87,7 +87,19 @@ ReasonableRobotArduinoComunicator::writeRadps(std::vector<float>& command_radps)
   send_command[motor_num_ * 2 + 1] = send_command[0];
   for (int i = 0; i < motor_num_; i++)
   {
-    int32_t speed_rpm = static_cast<int32_t>(command_radps[i] / (M_PI * 2.0f) * 60.0);
+    // The board takes whole rpm. On this robot 1 rpm is 0.01 m/s at the
+    // tyre and, differentially, 0.077 rad/s of yaw, so truncation used to
+    // turn anything under that into a standstill: Nav2 asking for 0.04 rad/s
+    // at the end of a leg got nothing and aborted on "no progress". Round to
+    // nearest, and send at least 1 rpm in the commanded direction for any
+    // command that is not actually zero, so a small request moves the robot
+    // at its slowest rather than not at all. Zero stays zero.
+    const float rpm = command_radps[i] / (M_PI * 2.0f) * 60.0f;
+    int32_t speed_rpm = static_cast<int32_t>(std::lround(rpm));
+    if (speed_rpm == 0 && std::fabs(rpm) > 1e-3f)
+    {
+      speed_rpm = rpm > 0.0f ? 1 : -1;
+    }
     send_command[2*i + 1] = static_cast<uint8_t>((speed_rpm >> 8) & 0x000000ff);
     send_command[2*i + 2] = static_cast<uint8_t>(speed_rpm & 0x000000ff);
     send_command[motor_num_ * 2 + 1] += send_command[2*i + 1];
