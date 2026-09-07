@@ -52,6 +52,11 @@ install(
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
+
+  # Times readRad() against a pty. -lutil is openpty.
+  ament_add_gtest(test_read_timing test/test_read_timing.cpp)
+  target_link_libraries(test_read_timing ${PROJECT_NAME} util)
+  target_include_directories(test_read_timing PRIVATE include)
 endif()
 
 ## EXPORTS

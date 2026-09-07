@@ -8,6 +8,7 @@
 */
 
 #include <stdio.h>
+#include <poll.h>
 #include <unistd.h>
 #include <time.h>
 #include <stdlib.h>
@@ -16,6 +17,7 @@
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <termios.h>
+#include <chrono>
 #include <cmath>
 #include <cfloat>
 
@@ -149,19 +151,42 @@ ReasonableRobotArduinoComunicator::readRad(std::vector<float>& response_rad, std
     return false;
   }
 
+  // Wait for a whole frame, waking when the kernel has something rather than on
+  // a 10 ms tick.
+  //
+  // This loop used to probe FIONREAD and then usleep(10000) unconditionally, so
+  // the wait was quantised to 10 ms and never shorter than 10 ms even when the
+  // frame was already sitting in the buffer. At 9600 baud a 14 byte reply takes
+  // 14.6 ms on the wire, which lands the wait on 20 ms about as often as 30, and
+  // the cycle time moved in 10 ms steps with it. A constant command does not
+  // care when it is repeated, which is why teleop looks smooth; a command that
+  // changes every cycle gets applied at those uneven moments, and that is the
+  // stutter. poll() returns as soon as a byte arrives, so the wait becomes the
+  // frame's actual arrival time.
+  //
+  // The overall budget is unchanged at 300 ms: this is about when the wait ends,
+  // not about how long a broken link is tolerated.
+  const int32_t want = static_cast<int32_t>(motor_num_) * 6 + 2;
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(300);
   int available_size = 0;
-  int32_t retry_count = 0;
-  while (available_size < static_cast<int32_t>(motor_num_) * 6 + 2)
+  for (;;)
   {
     ioctl(device_fd_, FIONREAD, &available_size);
-    usleep(10000);
-
-    retry_count++;
-    if (retry_count > 30)
+    if (available_size >= want)
+    {
+      break;
+    }
+    const auto now = std::chrono::steady_clock::now();
+    if (now >= deadline)
     {
       tcflush(device_fd_, TCIFLUSH);
       return false;
     }
+    const auto left =
+      std::chrono::duration_cast<std::chrono::milliseconds>(deadline - now).count();
+    struct pollfd pfd = {device_fd_, POLLIN, 0};
+    // At least 1 ms so a deadline less than a millisecond away still yields.
+    poll(&pfd, 1, static_cast<int>(left > 0 ? left : 1));
   }
 
   // Take everything the board has sent and use the newest complete frame in
