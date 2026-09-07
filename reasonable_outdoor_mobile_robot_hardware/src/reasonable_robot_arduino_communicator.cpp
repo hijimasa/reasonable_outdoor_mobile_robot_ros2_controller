@@ -23,7 +23,16 @@
 
 #include "reasonable_outdoor_mobile_robot_hardware/reasonable_robot_arduino_communicator.h"
 
-#define BAUD_RATE    B9600
+// Must match Serial.begin() in the DDTMotorController sketch. 500000 divides
+// the board's 16 MHz exactly (UBRR 3 with U2X, 0.00% error) and is a standard
+// Linux constant, so neither end is approximating; 115200 would be +2.12% on
+// that AVR. It takes the 6 byte command and 14 byte reply from 20.8 ms on the
+// wire to 0.40 ms.
+//
+// Both ends have to change together. Flashing one without rebuilding the other
+// leaves the link silent, which reads as "No valid status frame from the motor
+// board" here and as a command timeout on the board.
+#define BAUD_RATE    B500000
 using SERIAL_WRITE = decltype(&write);
 SERIAL_WRITE serial_write = write;
 using SERIAL_READ = decltype(&read);
