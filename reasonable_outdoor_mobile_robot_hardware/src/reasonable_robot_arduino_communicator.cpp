@@ -98,19 +98,22 @@ ReasonableRobotArduinoComunicator::writeRadps(std::vector<float>& command_radps)
   send_command[motor_num_ * 2 + 1] = send_command[0];
   for (int i = 0; i < motor_num_; i++)
   {
-    // The board takes whole rpm. On this robot 1 rpm is 0.01 m/s at the
-    // tyre and, differentially, 0.077 rad/s of yaw, so truncation used to
-    // turn anything under that into a standstill: Nav2 asking for 0.04 rad/s
-    // at the end of a leg got nothing and aborted on "no progress". Round to
-    // nearest, and send at least 1 rpm in the commanded direction for any
-    // command that is not actually zero, so a small request moves the robot
-    // at its slowest rather than not at all. Zero stays zero.
+    // The board takes whole rpm, so round to nearest rather than truncating:
+    // that alone halves the deadband, to half an rpm, 0.005 m/s at the tyre.
+    //
+    // Do NOT floor this at +-1 rpm for a non-zero command. That was tried on
+    // 2026-09-07 and had to come out on 2026-09-12: the board's feedback is
+    // also whole rpm, and its PID is an accumulator with no anti-windup --
+    //   current_command += k_p*(e[k]-e[k-1]) + k_d*(...) + k_i*e[k]
+    // with k_i 40 and a 30 ms loop. A 1 rpm target the motor reports back as
+    // 0 rpm is an error of 1 that never clears, so the integral term adds 40
+    // every loop until the command saturates at 32767 and the wheel breaks
+    // away at full power. Nav2 asks for velocities under half an rpm all the
+    // time -- trimming a heading, easing into a goal -- so this turned every
+    // one of them into a lurch. Below the deadband the robot should sit
+    // still; the goal tolerances are what stop a goal hanging on it.
     const float rpm = command_radps[i] / (M_PI * 2.0f) * 60.0f;
-    int32_t speed_rpm = static_cast<int32_t>(std::lround(rpm));
-    if (speed_rpm == 0 && std::fabs(rpm) > 1e-3f)
-    {
-      speed_rpm = rpm > 0.0f ? 1 : -1;
-    }
+    const int32_t speed_rpm = static_cast<int32_t>(std::lround(rpm));
     send_command[2*i + 1] = static_cast<uint8_t>((speed_rpm >> 8) & 0x000000ff);
     send_command[2*i + 2] = static_cast<uint8_t>(speed_rpm & 0x000000ff);
     send_command[motor_num_ * 2 + 1] += send_command[2*i + 1];
